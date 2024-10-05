@@ -80,8 +80,6 @@ namespace LethalLevelLoader
             TryCreateMatchingProperties();
 
             Patches.StartOfRound.allItemsList.itemsList.Add(Item);
-            if (IsBuyableItem)
-                TerminalManager.CreateItemTerminalData(this);
         }
 
         internal override void TryCreateMatchingProperties()

@@ -325,6 +325,9 @@ namespace LethalLevelLoader
             VehiclesManager.PatchVanillaVehiclesLists();
             VehiclesManager.SetBuyableVehicleIDs();
 
+            foreach(ExtendedItem customBuyableExtendedItem in PatchedContent.CustomExtendedItems.Where(x => x.IsBuyableItem))
+                    TerminalManager.CreateItemTerminalData(customBuyableExtendedItem);
+
             foreach (ExtendedBuyableVehicle customExtendedBuyableVehicle in PatchedContent.CustomExtendedBuyableVehicles)
                 TerminalManager.CreateBuyableVehicleTerminalData(customExtendedBuyableVehicle);
 
