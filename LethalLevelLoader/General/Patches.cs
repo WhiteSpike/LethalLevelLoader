@@ -323,8 +323,6 @@ if (AssetBundleLoader.noBundlesFound == true)
 
                 //Debugging.
                 DebugHelper.DebugAllContentTags();
-                ItemManager.GetExtendedItemPriceData();
-                ItemManager.GetExtendedItemWeightData();
             }
 
             DebugStopwatch.StartStopWatch("Bind Configs");
