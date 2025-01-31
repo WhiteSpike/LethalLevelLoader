@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System;
 using System.Reflection;
+using LethalLevelLoader.Data.Levels;
 
 namespace LethalLevelLoader
 {
