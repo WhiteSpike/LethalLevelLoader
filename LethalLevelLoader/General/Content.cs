@@ -1,9 +1,7 @@
 ﻿using DunGen.Graph;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -26,15 +24,43 @@ namespace LethalLevelLoader
 
         public static List<ExtendedLevel> ExtendedLevels { get; internal set; } = new List<ExtendedLevel>();
 
+        internal static List<T> GetFilteredExtendedContent<T>(this List<T> collection, ContentType contentType) where T : ExtendedContent
+        {
+            if (contentType == ContentType.Any) return new List<T>(collection);
+
+            List <T> list = new List<T>();
+            foreach (T content in collection)
+            {
+                    if (content.ContentType == contentType)
+                        list.Add(content);
+                    break;
+            }
+            return (list);
+        }
+        internal static List<SelectableLevel> GetSelectableLevels(ContentType contentType)
+        {
+            List<SelectableLevel> list = new List<SelectableLevel>();
+            foreach (ExtendedLevel level in ExtendedLevels)
+            {
+                switch (contentType)
+                {
+                    case ContentType.Any: list.Add(level.SelectableLevel); break;
+                    default:
+                        {
+                            if (level.ContentType == contentType)
+                                list.Add(level.SelectableLevel);
+                            break;
+                        }
+                }
+            }
+            return (list);
+        }
+
         public static List<ExtendedLevel> VanillaExtendedLevels
         {
             get
             {
-                List<ExtendedLevel> list = new List<ExtendedLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    if (level.ContentType == ContentType.Vanilla)
-                        list.Add(level);
-                return (list);
+                return ExtendedLevels.GetFilteredExtendedContent(ContentType.Vanilla);
             }
         }
 
@@ -42,11 +68,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedLevel> list = new List<ExtendedLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    if (level.ContentType == ContentType.Custom)
-                        list.Add(level);
-                return (list);
+                return ExtendedLevels.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -62,10 +84,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<SelectableLevel> list = new List<SelectableLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    list.Add(level.SelectableLevel);
-                return (list);
+                return GetSelectableLevels(ContentType.Any);
             }
         }
 
@@ -73,9 +92,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<SelectableLevel> list = new List<SelectableLevel>();
-                foreach (SelectableLevel selectableLevel in OriginalContent.MoonsCatalogue)
-                    list.Add(selectableLevel);
+                List<SelectableLevel> list = new List<SelectableLevel>(OriginalContent.MoonsCatalogue);
                 foreach (ExtendedLevel level in ExtendedLevels)
                     if (level.ContentType == ContentType.Custom)
                         list.Add(level.SelectableLevel);
@@ -83,19 +100,13 @@ namespace LethalLevelLoader
             }
         }
 
-
-
         public static List<ExtendedDungeonFlow> ExtendedDungeonFlows { get; internal set; } = new List<ExtendedDungeonFlow>();
 
         public static List<ExtendedDungeonFlow> VanillaExtendedDungeonFlows
         {
             get
             {
-                List<ExtendedDungeonFlow> list = new List<ExtendedDungeonFlow>();
-                foreach (ExtendedDungeonFlow dungeon in ExtendedDungeonFlows)
-                    if (dungeon.ContentType == ContentType.Vanilla)
-                        list.Add(dungeon);
-                return (list);
+                return ExtendedDungeonFlows.GetFilteredExtendedContent(ContentType.Vanilla);
             }
         }
 
@@ -103,11 +114,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedDungeonFlow> list = new List<ExtendedDungeonFlow>();
-                foreach (ExtendedDungeonFlow dungeon in ExtendedDungeonFlows)
-                    if (dungeon.ContentType == ContentType.Custom)
-                        list.Add(dungeon);
-                return (list);
+                return ExtendedDungeonFlows.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -119,11 +126,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedWeatherEffect> list = new List<ExtendedWeatherEffect>();
-                foreach (ExtendedWeatherEffect effect in ExtendedWeatherEffects)
-                    if (effect.contentType == ContentType.Vanilla)
-                        list.Add(effect);
-                return (list);
+                return ExtendedWeatherEffects.GetFilteredExtendedContent(ContentType.Vanilla);
             }
         }
 
@@ -131,11 +134,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedWeatherEffect> list = new List<ExtendedWeatherEffect>();
-                foreach (ExtendedWeatherEffect effect in ExtendedWeatherEffects)
-                    if (effect.contentType == ContentType.Custom)
-                        list.Add(effect);
-                return (list);
+                return ExtendedWeatherEffects.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -147,11 +146,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedItem> returnList = new List<ExtendedItem>();
-                foreach (ExtendedItem item in ExtendedItems)
-                    if (item.ContentType == ContentType.Custom)
-                        returnList.Add(item);
-                return (returnList);
+                return ExtendedItems.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -163,11 +158,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedEnemyType> returnList = new List<ExtendedEnemyType>();
-                foreach (ExtendedEnemyType extendedEnemyType in ExtendedEnemyTypes)
-                    if (extendedEnemyType.ContentType == ContentType.Custom)
-                        returnList.Add(extendedEnemyType);
-                return (returnList);
+                return ExtendedEnemyTypes.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -175,11 +166,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedEnemyType> returnList = new List<ExtendedEnemyType>();
-                foreach (ExtendedEnemyType extendedEnemyType in ExtendedEnemyTypes)
-                    if (extendedEnemyType.ContentType == ContentType.Vanilla)
-                        returnList.Add(extendedEnemyType);
-                return (returnList);
+                return ExtendedEnemyTypes.GetFilteredExtendedContent(ContentType.Vanilla);
             }
         }
 
@@ -189,11 +176,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedBuyableVehicle> returnList = new List<ExtendedBuyableVehicle>();
-                foreach (ExtendedBuyableVehicle extendedBuyableVehicle in ExtendedBuyableVehicles)
-                    if (extendedBuyableVehicle.ContentType == ContentType.Custom)
-                        returnList.Add(extendedBuyableVehicle);
-                return (returnList);
+                return ExtendedBuyableVehicles.GetFilteredExtendedContent(ContentType.Custom);
             }
         }
 
@@ -201,11 +184,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedBuyableVehicle> returnList = new List<ExtendedBuyableVehicle>();
-                foreach (ExtendedBuyableVehicle extendedBuyableVehicle in ExtendedBuyableVehicles)
-                    if (extendedBuyableVehicle.ContentType == ContentType.Vanilla)
-                        returnList.Add(extendedBuyableVehicle);
-                return (returnList);
+                return ExtendedBuyableVehicles.GetFilteredExtendedContent(ContentType.Vanilla);
             }
         }
 

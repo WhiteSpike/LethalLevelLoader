@@ -1,14 +1,10 @@
 ﻿using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using UnityEngine;
 
 namespace LethalLevelLoader
 {
-    internal class SafetyPatches
+    internal static class SafetyPatches
     {
         internal const int harmonyPriority = 250;
 
