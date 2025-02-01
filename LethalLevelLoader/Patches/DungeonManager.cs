@@ -1,25 +1,24 @@
-﻿using DunGen;
-using DunGen.Graph;
+﻿using DunGen.Graph;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using UnityEngine.Events;
 
 namespace LethalLevelLoader
 {
-    public class DungeonManager
+    public static class DungeonManager
     {
         public static ExtendedDungeonFlow CurrentExtendedDungeonFlow
         {
             get
             {
                 ExtendedDungeonFlow returnFlow = null;
-                if (Patches.RoundManager != null && Patches.RoundManager.dungeonGenerator != null)
-                    if (TryGetExtendedDungeonFlow(Patches.RoundManager.dungeonGenerator.Generator.DungeonFlow, out ExtendedDungeonFlow flow))
-                        returnFlow = flow;
-                return (returnFlow);
+                if (Patches.RoundManager == null || Patches.RoundManager.dungeonGenerator == null) return returnFlow;
+
+                if (TryGetExtendedDungeonFlow(Patches.RoundManager.dungeonGenerator.Generator.DungeonFlow, out ExtendedDungeonFlow flow))
+                    returnFlow = flow;
+
+                return returnFlow;
             }
         }
         public static DungeonEvents GlobalDungeonEvents = new DungeonEvents();
@@ -53,14 +52,15 @@ namespace LethalLevelLoader
             foreach (ExtendedDungeonFlow customDungeonFlow in PatchedContent.CustomExtendedDungeonFlows)
                 potentialExtendedDungeonFlowsList.Add(new ExtendedDungeonFlowWithRarity(customDungeonFlow, 0));
 
-            foreach (ExtendedDungeonFlowWithRarity customDungeonFlow in new List<ExtendedDungeonFlowWithRarity>(potentialExtendedDungeonFlowsList))
+            foreach (ExtendedDungeonFlowWithRarity customDungeonFlow in potentialExtendedDungeonFlowsList)
             {
                 customDungeonFlow.rarity = customDungeonFlow.extendedDungeonFlow.LevelMatchingProperties.GetDynamicRarity(extendedLevel);
-                if (customDungeonFlow.rarity != 0)
-                    returnExtendedDungeonFlowsList.Add(customDungeonFlow);
+                if (customDungeonFlow.rarity == 0) continue;
+
+                returnExtendedDungeonFlowsList.Add(customDungeonFlow);
             }
 
-            if (debugResults == true)
+            if (debugResults)
             {
                 string debugString = "ExtendedLevel <-> ExtendedDungeonFlow Dynamic Matching Report." + "\n\n";
 
@@ -91,7 +91,7 @@ namespace LethalLevelLoader
 
             DebugStopwatch.StopStopWatch("Get Valid ExtendedDungeonFlows");
 
-            return (returnExtendedDungeonFlowsList);
+            return returnExtendedDungeonFlowsList;
         }
 
         internal static void RefreshDungeonFlowIDs()
@@ -124,22 +124,26 @@ namespace LethalLevelLoader
         internal static bool TryGetExtendedDungeonFlow(DungeonFlow dungeonFlow, out ExtendedDungeonFlow returnExtendedDungeonFlow, ContentType contentType = ContentType.Any)
         {
             returnExtendedDungeonFlow = null;
+            if (dungeonFlow == null) return false;
+
             List<ExtendedDungeonFlow> extendedDungeonFlowsList = null;
 
-            if (dungeonFlow == null) return (false);
-
-            if (contentType == ContentType.Any)
-                extendedDungeonFlowsList = PatchedContent.ExtendedDungeonFlows;
-            else if (contentType == ContentType.Custom)
-                extendedDungeonFlowsList = PatchedContent.CustomExtendedDungeonFlows;
-            else if (contentType == ContentType.Vanilla)
-                extendedDungeonFlowsList = PatchedContent.VanillaExtendedDungeonFlows;
+            switch(contentType)
+            {
+                case ContentType.Any: extendedDungeonFlowsList = PatchedContent.ExtendedDungeonFlows; break;
+                case ContentType.Custom: extendedDungeonFlowsList = PatchedContent.CustomExtendedDungeonFlows; break;
+                case ContentType.Vanilla: extendedDungeonFlowsList = PatchedContent.VanillaExtendedDungeonFlows; break;
+            }
 
             foreach (ExtendedDungeonFlow extendedDungeonFlow in extendedDungeonFlowsList)
-                if (extendedDungeonFlow.DungeonFlow == dungeonFlow)
-                    returnExtendedDungeonFlow = extendedDungeonFlow;
+            {
+                if (extendedDungeonFlow.DungeonFlow != dungeonFlow) continue;
 
-            return (returnExtendedDungeonFlow != null);
+                returnExtendedDungeonFlow = extendedDungeonFlow;
+                break;
+            }
+
+            return returnExtendedDungeonFlow != null;
         }
 
         internal static bool TryGetExtendedDungeonFlow(IndoorMapType indoorMapType, out ExtendedDungeonFlow returnExtendedDungeonFlow, ContentType contentType = ContentType.Any)
