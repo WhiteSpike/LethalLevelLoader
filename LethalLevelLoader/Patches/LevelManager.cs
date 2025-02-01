@@ -1,14 +1,7 @@
-﻿using BepInEx;
-using HarmonyLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using Unity.AI.Navigation;
-using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 namespace LethalLevelLoader
 {
@@ -19,9 +12,11 @@ namespace LethalLevelLoader
             get
             {
                 ExtendedLevel returnLevel = null;
-                if (Patches.StartOfRound != null)
-                    if (TryGetExtendedLevel(Patches.StartOfRound.currentLevel, out ExtendedLevel level))
-                        returnLevel = level;
+                if (Patches.StartOfRound == null) return returnLevel;
+
+                if (TryGetExtendedLevel(Patches.StartOfRound.currentLevel, out ExtendedLevel level))
+                    returnLevel = level;
+
                 return returnLevel;
             }
         }
@@ -33,7 +28,7 @@ namespace LethalLevelLoader
 
         public static int invalidSaveLevelID = -1;
 
-        public static Dictionary<string, int> dynamicRiskLevelDictionary = new Dictionary<string, int>()
+        public static readonly Dictionary<string, int> dynamicRiskLevelDictionary = new Dictionary<string, int>()
         {
             {"D-", 0},
             {"D", 0},
@@ -86,20 +81,24 @@ namespace LethalLevelLoader
         public static bool TryGetExtendedLevel(SelectableLevel selectableLevel, out ExtendedLevel returnExtendedLevel, ContentType levelType = ContentType.Any)
         {
             returnExtendedLevel = null;
-            List<ExtendedLevel> extendedLevelsList = null;
-
             if (selectableLevel == null) return false;
 
-            if (levelType == ContentType.Any)
-                extendedLevelsList = PatchedContent.ExtendedLevels;
-            else if (levelType == ContentType.Custom)
-                extendedLevelsList = PatchedContent.CustomExtendedLevels;
-            else if (levelType == ContentType.Vanilla)
-                extendedLevelsList = PatchedContent.VanillaExtendedLevels;
+            List<ExtendedLevel> extendedLevelsList = null;
+
+            switch(levelType)
+            {
+                case ContentType.Any: extendedLevelsList = PatchedContent.ExtendedLevels; break;
+                case ContentType.Custom: extendedLevelsList = PatchedContent.CustomExtendedLevels; break;
+                case ContentType.Vanilla: extendedLevelsList= PatchedContent.VanillaExtendedLevels; break;
+            }
 
             foreach (ExtendedLevel extendedLevel in extendedLevelsList)
-                if (extendedLevel.SelectableLevel == selectableLevel)
-                    returnExtendedLevel = extendedLevel;
+            {
+                if (extendedLevel.SelectableLevel != selectableLevel) continue;
+
+                returnExtendedLevel = extendedLevel;
+                break;
+            }
 
             return (returnExtendedLevel != null);
         }
@@ -109,75 +108,15 @@ namespace LethalLevelLoader
             ExtendedLevel returnExtendedLevel = null;
 
             foreach (ExtendedLevel extendedLevel in PatchedContent.ExtendedLevels)
-                if (extendedLevel.SelectableLevel == selectableLevel)
-                    returnExtendedLevel = extendedLevel;
+            {
+                if (extendedLevel.SelectableLevel != selectableLevel) continue;
+
+                returnExtendedLevel = extendedLevel;
+                break;
+            }
 
             return (returnExtendedLevel);
         }
-
-        public static void RegisterExtendedFootstepSurfaces(ExtendedLevel extendedLevel)
-        {
-            /*List<FootstepSurface> currentFootstepSurfaces = Patches.StartOfRound.footstepSurfaces.ToList();
-
-            if (extendedLevel.extendedFootstepSurfaces != null)
-            {
-                foreach (ExtendedFootstepSurface extendedFootstepSurface in extendedLevel.extendedFootstepSurfaces)
-                {
-                    if (extendedFootstepSurface != null && extendedFootstepSurface.footstepSurface != null)
-                        if ((extendedFootstepSurface.associatedGameObjects != null && extendedFootstepSurface.associatedGameObjects.Count != 0) || (extendedFootstepSurface.associatedMaterials != null && extendedFootstepSurface.associatedMaterials.Count != 0))
-                        {
-                            if (!currentFootstepSurfaces.Contains(extendedFootstepSurface.footstepSurface))
-                            {
-                                DebugHelper.Log("Registering New Footstep Surface:  " + extendedFootstepSurface.footstepSurface.surfaceTag + " From ExtendedLevel: " + extendedLevel);
-                                Patches.StartOfRound.footstepSurfaces = Patches.StartOfRound.footstepSurfaces.AddItem(extendedFootstepSurface.footstepSurface).ToArray();
-                                extendedFootstepSurface.arrayIndex = Patches.StartOfRound.footstepSurfaces.Length - 1;
-                            }
-                        }
-                }
-
-
-                if (extendedLevel.extendedFootstepSurfaces.Count != 0)
-                    RefreshCachedFootstepSurfaceData();
-            }*/
-        }
-
-        public static void RefreshCachedFootstepSurfaceData()
-        {
-            /*cachedFootstepSurfacesDictionary = new Dictionary<FootstepSurface, ExtendedFootstepSurface>();
-            foreach (FootstepSurface footstepSurface in Patches.StartOfRound.footstepSurfaces)
-                cachedFootstepSurfacesDictionary.Add(footstepSurface, null);
-            List<ExtendedFootstepSurface> extendedFootstepSurfaceList = new List<ExtendedFootstepSurface>();
-            foreach (ExtendedLevel customLevel in PatchedContent.CustomExtendedLevels)
-                foreach (ExtendedFootstepSurface extendedFootstepSurface in customLevel.extendedFootstepSurfaces)
-                    if (!extendedFootstepSurfaceList.Contains(extendedFootstepSurface))
-                    {
-                        extendedFootstepSurfaceList.Add(extendedFootstepSurface);
-                        if (cachedFootstepSurfacesDictionary.ContainsKey(extendedFootstepSurface.footstepSurface))
-                            cachedFootstepSurfacesDictionary[extendedFootstepSurface.footstepSurface] = extendedFootstepSurface;
-                    }
-            cachedFootstepSurfaceTagsList = new List<string>();
-            cachedExtendedFootstepSurfaceMaterialsList = new List<Material>();
-            cachedExtendedFootstepSurfaceGameObjectsList = new List<GameObject>();
-            foreach (FootstepSurface footstepSurface in cachedFootstepSurfacesDictionary.Keys)
-            {
-                if (footstepSurface != null)
-                {
-                    if (cachedFootstepSurfacesDictionary.TryGetValue(footstepSurface, out ExtendedFootstepSurface extendedFootstepSurface))
-                    {
-                        if (extendedFootstepSurface != null)
-                        {
-                            foreach (Material material in extendedFootstepSurface.associatedMaterials)
-                                cachedExtendedFootstepSurfaceMaterialsList.Add(material);
-                            foreach (GameObject gameObject in extendedFootstepSurface.associatedGameObjects)
-                                cachedExtendedFootstepSurfaceGameObjectsList.Add(gameObject);
-                        }
-                    }
-                    else
-                        cachedFootstepSurfaceTagsList.Add(footstepSurface.surfaceTag);
-                }
-            }*/
-        }
-
         public static void PopulateDynamicRiskLevelDictionary()
         {
             Dictionary<string, List<int>> vanillaRiskLevelDictionary = new Dictionary<string, List<int>>();
