@@ -31,9 +31,9 @@ namespace LethalLevelLoader
             List <T> list = new List<T>();
             foreach (T content in collection)
             {
-                    if (content.ContentType == contentType)
-                        list.Add(content);
-                    break;
+                if (content.ContentType != contentType) continue;
+
+                list.Add(content);
             }
             return (list);
         }
