@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace LethalLevelLoader
@@ -13,36 +11,31 @@ namespace LethalLevelLoader
 
         internal static void PopulateContentTagData()
         {
-            List<string> allContentTagStringsList = new List<string>();
             Dictionary<string, List<ContentTag>> contentTagDictionary = new Dictionary<string, List<ContentTag>>();
             List<ContentTag> allContentTagsList = new List<ContentTag>();
 
             foreach (ExtendedMod extendedMod in PatchedContent.ExtendedMods.Concat(new List<ExtendedMod>(){PatchedContent.VanillaMod}))
                 foreach (ExtendedContent extendedContent in extendedMod.ExtendedContents)
                     foreach (ContentTag contentTag in extendedContent.ContentTags)
+                    {
                         if (!allContentTagsList.Contains(contentTag))
+                        {
                             allContentTagsList.Add(contentTag);
 
-            foreach (ContentTag contentTag in allContentTagsList)
-            {
-                if (contentTagDictionary.TryGetValue(contentTag.contentTagName, out List<ContentTag> contentTagsList))
-                    contentTagsList.Add(contentTag);
-                else
-                    contentTagDictionary.Add(contentTag.contentTagName, new List<ContentTag>{contentTag});
-            }
+                            if (contentTagDictionary.TryGetValue(contentTag.contentTagName, out List<ContentTag> contentTagsList))
+                                contentTagsList.Add(contentTag);
+                            else
+                                contentTagDictionary.Add(contentTag.contentTagName, new List<ContentTag> { contentTag });
+                        }
 
-            globalContentTagDictionary = new Dictionary<string, List<ContentTag>>(contentTagDictionary);
-
-            foreach (ExtendedMod extendedMod in PatchedContent.ExtendedMods.Concat(new List<ExtendedMod>() { PatchedContent.VanillaMod }))
-                foreach (ExtendedContent extendedContent in extendedMod.ExtendedContents)
-                    foreach (ContentTag contentTag in extendedContent.ContentTags)
-                    {
                         if (globalcontentTagExtendedContentDictionary.TryGetValue(contentTag.contentTagName, out List<ExtendedContent> extendedContentList))
                             extendedContentList.Add(extendedContent);
                         else
-                            globalcontentTagExtendedContentDictionary.Add(contentTag.contentTagName, new List<ExtendedContent>{extendedContent});
-                    }    
-                    string debugString = "Global Tag Dictionary Report" + "\n\n";
+                            globalcontentTagExtendedContentDictionary.Add(contentTag.contentTagName, new List<ExtendedContent> { extendedContent });
+                    }
+
+            globalContentTagDictionary = contentTagDictionary;
+            string debugString = "Global Tag Dictionary Report" + "\n\n";
 
             foreach (KeyValuePair<string, List<ContentTag>> globalContentTagPair in contentTagDictionary)
                 debugString += "\nTag: " + globalContentTagPair.Key + ", Found Matching ContentTags: " + globalContentTagPair.Value.Count;
@@ -63,10 +56,7 @@ namespace LethalLevelLoader
 
         public static List<ExtendedContent> GetAllExtendedContentsByTag(string tag)
         {
-            if (globalcontentTagExtendedContentDictionary.TryGetValue(tag, out List<ExtendedContent> extendedContents))
-                return (extendedContents);
-            else
-                return (new List<ExtendedContent>());
+            return globalcontentTagExtendedContentDictionary.GetValueOrDefault(tag, []);
         }
 
         public static bool TryGetContentTagColour(ExtendedContent extendedContent, string tag, out Color color)
