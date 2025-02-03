@@ -1,13 +1,9 @@
 ﻿#if !HARMONY_DISABLED
 using HarmonyLib;
-using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
-using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace LethalLevelLoader
 {
@@ -49,8 +45,6 @@ namespace LethalLevelLoader
 
         public delegate string PreviewInfoText(ExtendedLevel extendedLevel, PreviewInfoType infoType);
         public static event PreviewInfoText onBeforePreviewInfoTextAdded;
-
-        //internal static Dictionary<TerminalNode, Action<TerminalNode, TerminalNode>> terminalNodeRegisteredEventDictionary = new Dictionary<TerminalNode, Action<TerminalNode, TerminalNode>>();
 
         public enum LoadNodeActionType { Before,  After }
         public delegate bool LoadNodeAction(ref TerminalNode currentNode, ref TerminalNode loadNode);
@@ -164,27 +158,6 @@ namespace LethalLevelLoader
 
         internal static bool RunLethalLevelLoaderTerminalEvents(TerminalNode node)
         {
-            /*if (node != null && string.IsNullOrEmpty(node.terminalEvent) == false)
-            {
-                //DebugHelper.Log("Running LLL Terminal Event: " + node.terminalEvent + "| EnumValue: " + GetTerminalEventEnum(node.terminalEvent) + " | StringValue: " + GetTerminalEventString(node.terminalEvent));
-                if (node.name.Contains("preview") && Enum.TryParse(typeof(PreviewInfoType), GetTerminalEventEnum(node.terminalEvent), out object previewEnumValue))
-                    Settings.levelPreviewInfoType = (PreviewInfoType)previewEnumValue;
-                else if (node.name.Contains("sort") && Enum.TryParse(typeof(SortInfoType), GetTerminalEventEnum(node.terminalEvent), out object sortEnumValue))
-                    Settings.levelPreviewSortType = (SortInfoType)sortEnumValue;
-                else if (node.name.Contains("filter") && Enum.TryParse(typeof(FilterInfoType), GetTerminalEventEnum(node.terminalEvent), out object filterEnumValue))
-                {
-                    Settings.levelPreviewFilterType = (FilterInfoType)filterEnumValue;
-                    currentTagFilter = GetTerminalEventString(node.terminalEvent);
-                    DebugHelper.Log("Tag EventString: " + GetTerminalEventString(node.terminalEvent));
-                }
-
-                RefreshExtendedLevelGroups();
-
-                Terminal.screenText.text = Terminal.TextPostProcess("\n" + "\n" + "\n" + GetMoonsTerminalText(), Terminal.currentNode);
-                Terminal.currentText = Terminal.TextPostProcess("\n" + "\n" + "\n" + GetMoonsTerminalText(), Terminal.currentNode);
-
-                return (false);
-            }*/
             return (true);
         }
 
@@ -228,28 +201,20 @@ namespace LethalLevelLoader
 
         internal static void FilterMoonsCataloguePage(MoonsCataloguePage moonsCataloguePage)
         {
-            List<ExtendedLevel> removeLevelList = new List<ExtendedLevel>();
-
             foreach (ExtendedLevelGroup extendedLevelGroup in moonsCataloguePage.ExtendedLevelGroups)
                 foreach (ExtendedLevel extendedLevel in new List<ExtendedLevel>(extendedLevelGroup.extendedLevelsList))
                 {
-                    bool removeExtendedLevel = extendedLevel.IsRouteHidden;
-
-                    if (Settings.levelPreviewFilterType.Equals(FilterInfoType.Price))
-                        removeExtendedLevel = (extendedLevel.RoutePrice > Terminal.groupCredits);
-                    else if (Settings.levelPreviewFilterType.Equals(FilterInfoType.Weather))
-                        removeExtendedLevel = (GetWeatherConditions(extendedLevel) != string.Empty);
-                    else if (Settings.levelPreviewFilterType.Equals(FilterInfoType.Tag))
-                        removeExtendedLevel = (!extendedLevel.TryGetTag(currentTagFilter));
-
-                    if (removeExtendedLevel == true)
-                        removeLevelList.Add(extendedLevel);
-                }
-
-            foreach (ExtendedLevelGroup extendedLevelGroup in moonsCataloguePage.ExtendedLevelGroups)
-                foreach (ExtendedLevel extendedLevel in removeLevelList)
-                    if (extendedLevelGroup.extendedLevelsList.Contains(extendedLevel))
+                    bool removeExtendedLevel;
+                    switch (Settings.levelPreviewFilterType)
+                    {
+                        case FilterInfoType.Price: removeExtendedLevel = (extendedLevel.RoutePrice > Terminal.groupCredits); break;
+                        case FilterInfoType.Weather: removeExtendedLevel = (GetWeatherConditions(extendedLevel) != string.Empty); break;
+                        case FilterInfoType.Tag: removeExtendedLevel = (!extendedLevel.TryGetTag(currentTagFilter)); break;
+                        default: removeExtendedLevel = extendedLevel.IsRouteHidden; break;
+                    }
+                    if (removeExtendedLevel && extendedLevelGroup.extendedLevelsList.Contains(extendedLevel))
                         extendedLevelGroup.extendedLevelsList.Remove(extendedLevel);
+                }
 
             if (Settings.levelPreviewFilterType != FilterInfoType.None)
                 moonsCataloguePage.RebuildLevelGroups(new List<ExtendedLevelGroup>(moonsCataloguePage.ExtendedLevelGroups), Settings.moonsCatalogueSplitCount);
@@ -257,10 +222,17 @@ namespace LethalLevelLoader
 
         internal static void SortMoonsCataloguePage(MoonsCataloguePage cataloguePage)
         {
-            if (Settings.levelPreviewSortType.Equals(SortInfoType.Price))
-                cataloguePage.RebuildLevelGroups(cataloguePage.ExtendedLevels.OrderBy(o => o.RoutePrice), Settings.moonsCatalogueSplitCount);
-            else if (Settings.levelPreviewSortType.Equals(SortInfoType.Difficulty))
-                cataloguePage.RebuildLevelGroups(cataloguePage.ExtendedLevels.OrderBy(o => o.CalculatedDifficultyRating), Settings.moonsCatalogueSplitCount);
+            Func<ExtendedLevel, int> sortFunction = null;
+            switch(Settings.levelPreviewSortType)
+            {
+                case SortInfoType.Price: sortFunction = o => o.RoutePrice; break;
+                case SortInfoType.Difficulty: sortFunction = o => o.CalculatedDifficultyRating; break;
+                case SortInfoType.LastTraveled:
+                case SortInfoType.Tag:
+                case SortInfoType.None:
+                    return;
+            }
+            cataloguePage.RebuildLevelGroups(cataloguePage.ExtendedLevels.OrderBy(sortFunction), Settings.moonsCatalogueSplitCount);
         }
 
         internal static void SetStoryLogAuthorPostProcessText()
@@ -352,30 +324,25 @@ namespace LethalLevelLoader
 
         public static string GetExtendedLevelPreviewInfo(ExtendedLevel extendedLevel)
         {
-            string levelPreviewInfo = string.Empty;
-            //string offset = GetOffsetExtendedLevelName(extendedLevel);
-            string offset = string.Empty;
-
-            if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.Weather))
-                levelPreviewInfo = GetWeatherConditions(extendedLevel);
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.Price))
-                levelPreviewInfo = offset + "($" + extendedLevel.RoutePrice + ")";
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.Difficulty))
-                levelPreviewInfo = offset + "(" + extendedLevel.SelectableLevel.riskLevel + ")";
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.History))
-                levelPreviewInfo = offset + GetHistoryConditions(extendedLevel);
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.All))
-                levelPreviewInfo = offset + "(" + extendedLevel.SelectableLevel.riskLevel + ") " + "($" + extendedLevel.RoutePrice + ") " + GetWeatherConditions(extendedLevel);
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.Vanilla))
-                levelPreviewInfo = offset + "[planetTime]";
-            else if (Settings.levelPreviewInfoType.Equals(PreviewInfoType.Override))
-                levelPreviewInfo = offset + Settings.GetOverridePreviewInfo(extendedLevel);
-            if (extendedLevel.IsRouteLocked == true)
-                levelPreviewInfo += " (Locked)";
-
             string overridePreviewInfo = onBeforePreviewInfoTextAdded?.Invoke(extendedLevel, Settings.levelPreviewInfoType);
             if (overridePreviewInfo != null && overridePreviewInfo != string.Empty)
-                levelPreviewInfo = overridePreviewInfo;
+                return overridePreviewInfo;
+
+            string levelPreviewInfo = string.Empty;
+            string offset = string.Empty;
+
+            switch (Settings.levelPreviewInfoType)
+            {
+                case PreviewInfoType.Weather: levelPreviewInfo = GetWeatherConditions(extendedLevel); break;
+                case PreviewInfoType.Price: levelPreviewInfo = offset + $"(${extendedLevel.RoutePrice})"; break;
+                case PreviewInfoType.Difficulty: levelPreviewInfo = offset + $"({extendedLevel.SelectableLevel.riskLevel})"; break;
+                case PreviewInfoType.History: levelPreviewInfo = offset + GetHistoryConditions(extendedLevel); break;
+                case PreviewInfoType.All: levelPreviewInfo = offset + $"({extendedLevel.SelectableLevel.riskLevel}) (${extendedLevel.RoutePrice}) {GetWeatherConditions(extendedLevel)}"; break;
+                case PreviewInfoType.Vanilla: levelPreviewInfo = offset + "[planetTime]"; break;
+                case PreviewInfoType.Override: levelPreviewInfo = offset + Settings.GetOverridePreviewInfo(extendedLevel); break;
+            }
+            if (extendedLevel.IsRouteLocked)
+                levelPreviewInfo += " (Locked)";
 
             return (levelPreviewInfo);
         }

@@ -1,12 +1,8 @@
 ﻿using LethalLevelLoader.AssetBundles;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Xml.Serialization;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace LethalLevelLoader
 {
@@ -30,14 +26,11 @@ namespace LethalLevelLoader
 
         public List<NetworkSceneInfo> networkSceneInfos;
         internal Dictionary<string, List<AssetBundleGroup>> assetBundleGroupSceneDict = new Dictionary<string, List<AssetBundleGroup>>();
-        
-        //internal List<AssetBundleGroup> currentRouteRequestedBundles = new List<AssetBundleGroup>();
+
         internal ExtendedLevel currentRouteRequestor;
 
         private NetworkVariable<bool> allowedToLoadLevel = new NetworkVariable<bool>();
         internal static bool AllowedToLoadLevel => Instance == null ? false : Instance.allowedToLoadLevel.Value;
-
-        //private Dictionary<ulong, bool> playersReadyDict = new Dictionary<ulong, bool>();
 
         private NetworkList<bool> playersLoadStatus = new NetworkList<bool>();
 
@@ -48,7 +41,7 @@ namespace LethalLevelLoader
             DebugHelper.Log("NetworkBundleManger Has Spawned!", DebugType.IAmBatby);
             Instance = this;
 
-            if (Plugin.IsLobbyInitialized == true)
+            if (Plugin.IsLobbyInitialized)
                 Initialize();
             else
             {
@@ -192,21 +185,6 @@ namespace LethalLevelLoader
                         assetBundleGroupSceneDict.Add(groupSceneName, new List<AssetBundleGroup> { group });
                 }
         }
-
-        /*
-        internal void LogStuff()
-        {
-            DebugHelper.Log("NetworkBundleManager Spawned!", DebugType.IAmBatby);
-
-            DebugHelper.Log("NetworkSceneInfos!", DebugType.IAmBatby);
-            foreach (NetworkSceneInfo info in networkSceneInfos)
-                DebugHelper.Log("Level Scene Index: " + info.LevelSceneIndex + ", Scene Index: " + info.SceneIndex + ", Scene Path: " + info.LevelScenePath + ", Origin: " + info.Origin + ", IsLoaded: " + info.IsLoaded, DebugType.IAmBatby);
-
-            DebugHelper.Log("AssetBundleInfos!", DebugType.User);
-            foreach (AssetBundleInfo bundleInfo in AssetBundleLoader.AssetBundleInfos)
-                DebugHelper.Log("Path: " + bundleInfo.DirectoryPath + ", IsLoaded: " + bundleInfo.IsLoaded + ", IsSceneBundle: " + bundleInfo.IsSceneBundle, DebugType.IAmBatby);
-        }
-        */
 
     }
 }

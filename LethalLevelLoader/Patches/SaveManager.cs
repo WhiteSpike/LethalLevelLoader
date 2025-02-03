@@ -313,21 +313,24 @@ namespace LethalLevelLoader
 
         internal static int GetItemNameDuplicateIndex(Item item, string modName)
         {
-            if (modName != "")
+            if (modName.Length != 0)
             {
                 foreach (ExtendedMod extendedMod in PatchedContent.ExtendedMods)
-                    if (CompareModNames(extendedMod.ModName, modName))
+                {
+                    if (!CompareModNames(extendedMod.ModName, modName)) continue;
+                    int modCounter = 0;
+
+                    foreach (ExtendedItem extendedItem in extendedMod.ExtendedItems)
                     {
-                        int modCounter = 0;
+                        if (extendedItem.Item == item) break;
 
-                        foreach (ExtendedItem extendedItem in extendedMod.ExtendedItems)
-                            if (extendedItem.Item == item)
-                                break;
-                            else if (extendedItem.Item.itemName == item.itemName)
-                                modCounter++;
-
-                        return modCounter;
+                        if (extendedItem.Item.itemName == item.itemName)
+                            modCounter++;
                     }
+
+                    return modCounter;
+                }
+                    
 
                 return 0;
             }

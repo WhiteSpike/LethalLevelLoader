@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace LethalLevelLoader
 {
@@ -19,22 +17,21 @@ namespace LethalLevelLoader
                 extendedBuyableVehicle.VehicleID = -1;
 
             int vehicleID = 0;
-            foreach (ExtendedBuyableVehicle vanillaBuyableVehicle in PatchedContent.VanillaExtendedBuyableVehicles)
-            {
-                vanillaBuyableVehicle.VehicleID = vehicleID;
-                vehicleID++;
-            }
+            SetSellableVehicleIDs(PatchedContent.VanillaExtendedBuyableVehicles, ref vehicleID);
+            SetSellableVehicleIDs(PatchedContent.CustomExtendedBuyableVehicles, ref vehicleID);
+        }
 
-            foreach (ExtendedBuyableVehicle customBuyableVehicle in PatchedContent.CustomExtendedBuyableVehicles)
+        internal static void SetSellableVehicleIDs<T>(this List<T> collection, ref int vehicleID) where T : ExtendedBuyableVehicle
+        {
+            foreach (ExtendedBuyableVehicle extendedBuyableVehicle in collection)
             {
-                customBuyableVehicle.VehicleID = vehicleID;
-                vehicleID++;
-            }
+                extendedBuyableVehicle.VehicleID = vehicleID;
 
-            foreach (ExtendedBuyableVehicle extendedBuyableVehicle in PatchedContent.ExtendedBuyableVehicles)
                 if (extendedBuyableVehicle.BuyableVehicle.vehiclePrefab.TryGetComponent(out VehicleController vehicleController))
                     vehicleController.vehicleID = extendedBuyableVehicle.VehicleID;
 
+                vehicleID++;
+            }
         }
     }
 }
