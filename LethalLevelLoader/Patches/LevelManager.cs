@@ -83,13 +83,14 @@ namespace LethalLevelLoader
             returnExtendedLevel = null;
             if (selectableLevel == null) return false;
 
-            List<ExtendedLevel> extendedLevelsList = null;
+            List<ExtendedLevel> extendedLevelsList;
 
             switch(levelType)
             {
-                case ContentType.Any: extendedLevelsList = PatchedContent.ExtendedLevels; break;
                 case ContentType.Custom: extendedLevelsList = PatchedContent.CustomExtendedLevels; break;
                 case ContentType.Vanilla: extendedLevelsList= PatchedContent.VanillaExtendedLevels; break;
+                default:
+                    extendedLevelsList = PatchedContent.ExtendedLevels; break;
             }
 
             foreach (ExtendedLevel extendedLevel in extendedLevelsList)
