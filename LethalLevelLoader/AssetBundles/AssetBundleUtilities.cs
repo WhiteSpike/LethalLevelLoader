@@ -96,14 +96,7 @@ namespace LethalLevelLoader.AssetBundles
         internal static string GetLoadingPercentage(AssetBundleInfo info) => GetLoadingPercentage(info.ActiveProgress);
         internal static string GetLoadingPercentage(float progress)
         {
-            string loadingProgressText = progress.ToString("F2");
-            if (loadingProgressText.Contains("0."))
-                loadingProgressText = loadingProgressText.Replace("0.", "0");
-            else if (loadingProgressText.Contains("."))
-                loadingProgressText = loadingProgressText.Replace(".", string.Empty);
-            if (loadingProgressText == "00")
-                loadingProgressText = "000";
-            return (loadingProgressText + "%");
+            return progress.ToString("P2");
         }
     }
 }
