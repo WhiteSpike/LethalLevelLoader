@@ -87,69 +87,77 @@ namespace LethalLevelLoader
             ExtendedMod matchingExtendedMod = null;
             foreach (ExtendedMod registeredExtendedMod in obtainedExtendedModsList)
             {
-                if (extendedMod.ModMergeSetting == ModMergeSetting.MatchingModName && registeredExtendedMod.ModMergeSetting == ModMergeSetting.MatchingModName)
+                if (extendedMod.ModMergeSetting != registeredExtendedMod.ModMergeSetting) continue;
+
+                bool matched = false;
+                switch(extendedMod.ModMergeSetting)
                 {
-                    if (registeredExtendedMod.ModName == extendedMod.ModName)
-                        matchingExtendedMod = registeredExtendedMod;
+                    case ModMergeSetting.MatchingModName: matched = registeredExtendedMod.ModName == extendedMod.ModName; break;
+                    case ModMergeSetting.MatchingAuthorName: matched = registeredExtendedMod.AuthorName == extendedMod.AuthorName; break;
                 }
-                else if (extendedMod.ModMergeSetting == ModMergeSetting.MatchingAuthorName && registeredExtendedMod.ModMergeSetting == ModMergeSetting.MatchingAuthorName)
+                if (matched)
                 {
-                    if (registeredExtendedMod.AuthorName == extendedMod.AuthorName)
-                        matchingExtendedMod = registeredExtendedMod;
+                    matchingExtendedMod = registeredExtendedMod;
+                    break;
                 }
             }
 
             if (matchingExtendedMod != null)
             {
-                if (!matchingExtendedMod.ModName.Contains(matchingExtendedMod.AuthorName))
-                {
-                    DebugHelper.Log("Renaming ExtendedMod: " + matchingExtendedMod.ModName + " To: " + matchingExtendedMod.AuthorName + "sMod" + " Due To Upcoming ExtendedMod Merge!", DebugType.Developer);
-                    matchingExtendedMod.ModNameAliases.Add(extendedMod.ModName);
-                    matchingExtendedMod.ModName = matchingExtendedMod.AuthorName + "sMod";
-                    //matchingExtendedMod.name = matchingExtendedMod.ModName;
-                }
-                DebugHelper.Log("Merging ExtendedMod: " + extendedMod.ModName + " (" + extendedMod.AuthorName + ")" + " With Already Obtained ExtendedMod: " + matchingExtendedMod.ModName + " (" + matchingExtendedMod.AuthorName + ")", DebugType.Developer);
-                foreach (ExtendedContent extendedContent in extendedMod.ExtendedContents)
-                {
-                    try
-                    {
-                        matchingExtendedMod.RegisterExtendedContent(extendedContent);
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugHelper.LogError(ex, DebugType.User);
-                    }
-                }
+                MergeExtendedMods(matchingExtendedMod, extendedMod);
             }
             else
             {
-                obtainedExtendedModsList.Add(extendedMod);
-                if (source != null)
+                AddNewExtendedMod(extendedMod, source);
+            }
+        }
+
+        internal static void AddNewExtendedMod(ExtendedMod extendedMod, AssetBundleGroup source)
+        {
+            obtainedExtendedModsList.Add(extendedMod);
+            if (source != null)
+            {
+                if (obtainedExtendedModsDict.TryGetValue(source, out List<ExtendedMod> extendedModList))
                 {
-                    if (obtainedExtendedModsDict.TryGetValue(source, out List<ExtendedMod> extendedModList))
-                    {
-                        if (!extendedModList.Contains(extendedMod))
-                            extendedModList.Add(extendedMod);
-                    }
-                    else
-                        obtainedExtendedModsDict.Add(source, new List<ExtendedMod> { extendedMod });
+                    if (!extendedModList.Contains(extendedMod))
+                        extendedModList.Add(extendedMod);
                 }
+                else
+                    obtainedExtendedModsDict.Add(source, new List<ExtendedMod> { extendedMod });
+            }
 
 
-                List<ExtendedContent> serializedExtendedContents = new List<ExtendedContent>(extendedMod.ExtendedContents);
-                extendedMod.UnregisterAllExtendedContent();
-                foreach (ExtendedContent extendedContent in serializedExtendedContents)
+            List<ExtendedContent> serializedExtendedContents = new List<ExtendedContent>(extendedMod.ExtendedContents);
+            extendedMod.UnregisterAllExtendedContent();
+            RegisterContentToMod(extendedMod, serializedExtendedContents);
+        }
+
+        internal static void RegisterContentToMod(ExtendedMod extendedMod, List<ExtendedContent> content)
+        {
+            foreach (ExtendedContent extendedContent in content)
+            {
+                try
                 {
-                    try
-                    {
-                        extendedMod.RegisterExtendedContent(extendedContent);
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugHelper.LogError(ex, DebugType.User);
-                    }
+                    extendedMod.RegisterExtendedContent(extendedContent);
+                }
+                catch (Exception ex)
+                {
+                    DebugHelper.LogError(ex, DebugType.User);
                 }
             }
+        }
+
+        internal static void MergeExtendedMods(ExtendedMod matchingExtendedMod, ExtendedMod additionalExtendedMod)
+        {
+            if (!matchingExtendedMod.ModName.Contains(matchingExtendedMod.AuthorName))
+            {
+                DebugHelper.Log("Renaming ExtendedMod: " + matchingExtendedMod.ModName + " To: " + matchingExtendedMod.AuthorName + "sMod" + " Due To Upcoming ExtendedMod Merge!", DebugType.Developer);
+                matchingExtendedMod.ModNameAliases.Add(additionalExtendedMod.ModName);
+                matchingExtendedMod.ModName = matchingExtendedMod.AuthorName + "sMod";
+                //matchingExtendedMod.name = matchingExtendedMod.ModName;
+            }
+            DebugHelper.Log("Merging ExtendedMod: " + additionalExtendedMod.ModName + " (" + additionalExtendedMod.AuthorName + ")" + " With Already Obtained ExtendedMod: " + matchingExtendedMod.ModName + " (" + matchingExtendedMod.AuthorName + ")", DebugType.Developer);
+            RegisterContentToMod(matchingExtendedMod, additionalExtendedMod.ExtendedContents);
         }
 
         internal static void RegisterNewExtendedContent(ExtendedContent extendedContent, AssetBundleGroup source)
