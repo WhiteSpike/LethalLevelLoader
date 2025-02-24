@@ -16,7 +16,7 @@ namespace LethalLevelLoader
                 foreach (ExtendedLevelGroup group in extendedLevelGroups)
                     foreach (ExtendedLevel level in group.extendedLevelsList)
                         returnList.Add(level);
-
+                        
                 return (returnList);
             }
         }

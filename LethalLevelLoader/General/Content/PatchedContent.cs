@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEngine.Audio;
 
 namespace LethalLevelLoader
@@ -21,31 +20,28 @@ namespace LethalLevelLoader
         internal static Dictionary<EnemyType, ExtendedEnemyType> ExtendedEnemyTypeDictionary = new Dictionary<EnemyType, ExtendedEnemyType>();
         internal static Dictionary<BuyableVehicle, ExtendedBuyableVehicle> ExtendedBuyableVehicleDictionary = new Dictionary<BuyableVehicle, ExtendedBuyableVehicle>();
 
+        public static ExtendedContentCollection<ExtendedLevel> ExtendedLevelsData { get; internal set; } = new();
 
-        public static List<ExtendedLevel> ExtendedLevels { get; internal set; } = new List<ExtendedLevel>();
-
+        public static List<ExtendedLevel> ExtendedLevels
+        {
+            get
+            {
+                return ExtendedLevelsData.AllContent;
+            }
+        }
         public static List<ExtendedLevel> VanillaExtendedLevels
         {
             get
             {
-                List<ExtendedLevel> list = new List<ExtendedLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    if (level.ContentType == ContentType.Vanilla)
-                        list.Add(level);
-                return (list);
+                return ExtendedLevelsData.VanillaContent;
             }
         }
-
         public static List<ExtendedLevel> CustomExtendedLevels
         {
-            get
-            {
-                List<ExtendedLevel> list = new List<ExtendedLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    if (level.ContentType == ContentType.Custom)
-                        list.Add(level);
-                return (list);
-            }
+	        get
+	        {
+		        return ExtendedLevelsData.CustomContent;
+	        }
         }
 
         [Obsolete("Use PatchedContent.SelectableLevels instead.")] // probably used by no mod, but this is public so we should be careful
@@ -54,14 +50,12 @@ namespace LethalLevelLoader
             get { return (SelectableLevels); }
         }
 
-
-
         public static List<SelectableLevel> SelectableLevels
         {
             get
             {
                 List<SelectableLevel> list = new List<SelectableLevel>();
-                foreach (ExtendedLevel level in ExtendedLevels)
+                foreach (ExtendedLevel level in ExtendedLevelsData.AllContent)
                     list.Add(level.SelectableLevel);
                 return (list);
             }
@@ -71,29 +65,27 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<SelectableLevel> list = new List<SelectableLevel>();
-                foreach (SelectableLevel selectableLevel in OriginalContent.MoonsCatalogue)
-                    list.Add(selectableLevel);
-                foreach (ExtendedLevel level in ExtendedLevels)
-                    if (level.ContentType == ContentType.Custom)
-                        list.Add(level.SelectableLevel);
+                List<SelectableLevel> list = [.. OriginalContent.MoonsCatalogue];
+
+                foreach (ExtendedLevel level in ExtendedLevelsData.CustomContent)
+                    list.Add(level.SelectableLevel);
                 return (list);
             }
         }
-
-
-
-        public static List<ExtendedDungeonFlow> ExtendedDungeonFlows { get; internal set; } = new List<ExtendedDungeonFlow>();
+        public static ExtendedContentCollection<ExtendedDungeonFlow> ExtendedDungeonFlowsData { get; internal set; } = new();
+        public static List<ExtendedDungeonFlow> ExtendedDungeonFlows
+        {
+            get
+            {
+                return ExtendedDungeonFlowsData.AllContent;
+            }
+        }
 
         public static List<ExtendedDungeonFlow> VanillaExtendedDungeonFlows
         {
             get
             {
-                List<ExtendedDungeonFlow> list = new List<ExtendedDungeonFlow>();
-                foreach (ExtendedDungeonFlow dungeon in ExtendedDungeonFlows)
-                    if (dungeon.ContentType == ContentType.Vanilla)
-                        list.Add(dungeon);
-                return (list);
+                return ExtendedDungeonFlowsData.VanillaContent;
             }
         }
 
@@ -101,27 +93,23 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedDungeonFlow> list = new List<ExtendedDungeonFlow>();
-                foreach (ExtendedDungeonFlow dungeon in ExtendedDungeonFlows)
-                    if (dungeon.ContentType == ContentType.Custom)
-                        list.Add(dungeon);
-                return (list);
+                return ExtendedDungeonFlowsData.CustomContent;
             }
         }
-
-
-
-        public static List<ExtendedWeatherEffect> ExtendedWeatherEffects { get; internal set; } = new List<ExtendedWeatherEffect>();
+        public static ExtendedContentCollection<ExtendedWeatherEffect> ExtendedWeatherEffectsData { get; internal set; } = new();
+        public static List<ExtendedWeatherEffect> ExtendedWeatherEffects
+        {
+            get
+            {
+                return ExtendedWeatherEffectsData.AllContent;
+            }
+        }
 
         public static List<ExtendedWeatherEffect> VanillaExtendedWeatherEffects
         {
             get
             {
-                List<ExtendedWeatherEffect> list = new List<ExtendedWeatherEffect>();
-                foreach (ExtendedWeatherEffect effect in ExtendedWeatherEffects)
-                    if (effect.contentType == ContentType.Vanilla)
-                        list.Add(effect);
-                return (list);
+                return ExtendedWeatherEffectsData.VanillaContent;
             }
         }
 
@@ -129,43 +117,45 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedWeatherEffect> list = new List<ExtendedWeatherEffect>();
-                foreach (ExtendedWeatherEffect effect in ExtendedWeatherEffects)
-                    if (effect.contentType == ContentType.Custom)
-                        list.Add(effect);
-                return (list);
+                return ExtendedWeatherEffectsData.CustomContent;
             }
         }
-
-
-
-        public static List<ExtendedItem> ExtendedItems { get; internal set; } = new List<ExtendedItem>();
-
-        public static List<ExtendedItem> CustomExtendedItems
+        public static ExtendedContentCollection<ExtendedItem> ExtendedItemsData {  get; internal set; } = new();
+        public static List<ExtendedItem> ExtendedItems
         {
             get
             {
-                List<ExtendedItem> returnList = new List<ExtendedItem>();
-                foreach (ExtendedItem item in ExtendedItems)
-                    if (item.ContentType == ContentType.Custom)
-                        returnList.Add(item);
-                return (returnList);
+                return ExtendedItemsData.AllContent;
             }
         }
-
-
-
-        public static List<ExtendedEnemyType> ExtendedEnemyTypes { get; internal set; } = new List<ExtendedEnemyType>();
+		public static List<ExtendedItem> VanillaExtendedItems
+		{
+			get
+			{
+				return ExtendedItemsData.VanillaContent;
+			}
+		}
+		public static List<ExtendedItem> CustomExtendedItems
+        {
+            get
+            {
+                return ExtendedItemsData.CustomContent;
+            }
+        }
+		public static ExtendedContentCollection<ExtendedEnemyType> ExtendedEnemyTypesData { get; internal set; } = new();
+		public static List<ExtendedEnemyType> ExtendedEnemyTypes
+        {
+            get
+            {
+                return ExtendedEnemyTypesData.AllContent;
+            }
+        }
 
         public static List<ExtendedEnemyType> CustomExtendedEnemyTypes
         {
             get
             {
-                List<ExtendedEnemyType> returnList = new List<ExtendedEnemyType>();
-                foreach (ExtendedEnemyType extendedEnemyType in ExtendedEnemyTypes)
-                    if (extendedEnemyType.ContentType == ContentType.Custom)
-                        returnList.Add(extendedEnemyType);
-                return (returnList);
+                return ExtendedEnemyTypesData.CustomContent;
             }
         }
 
@@ -173,25 +163,24 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedEnemyType> returnList = new List<ExtendedEnemyType>();
-                foreach (ExtendedEnemyType extendedEnemyType in ExtendedEnemyTypes)
-                    if (extendedEnemyType.ContentType == ContentType.Vanilla)
-                        returnList.Add(extendedEnemyType);
-                return (returnList);
+                return ExtendedEnemyTypesData.VanillaContent;
             }
         }
 
-        public static List<ExtendedBuyableVehicle> ExtendedBuyableVehicles { get; internal set; } = new List<ExtendedBuyableVehicle>();
+		public static ExtendedContentCollection<ExtendedBuyableVehicle> ExtendedBuyableVehiclesData { get; internal set; } = new();
+		public static List<ExtendedBuyableVehicle> ExtendedBuyableVehicles
+        {
+            get
+            {
+                return ExtendedBuyableVehiclesData.AllContent;
+            }
+        }
 
         public static List<ExtendedBuyableVehicle> CustomExtendedBuyableVehicles
         {
             get
             {
-                List<ExtendedBuyableVehicle> returnList = new List<ExtendedBuyableVehicle>();
-                foreach (ExtendedBuyableVehicle extendedBuyableVehicle in ExtendedBuyableVehicles)
-                    if (extendedBuyableVehicle.ContentType == ContentType.Custom)
-                        returnList.Add(extendedBuyableVehicle);
-                return (returnList);
+                return ExtendedBuyableVehiclesData.CustomContent;
             }
         }
 
@@ -199,11 +188,7 @@ namespace LethalLevelLoader
         {
             get
             {
-                List<ExtendedBuyableVehicle> returnList = new List<ExtendedBuyableVehicle>();
-                foreach (ExtendedBuyableVehicle extendedBuyableVehicle in ExtendedBuyableVehicles)
-                    if (extendedBuyableVehicle.ContentType == ContentType.Vanilla)
-                        returnList.Add(extendedBuyableVehicle);
-                return (returnList);
+                return ExtendedBuyableVehiclesData.VanillaContent;
             }
         }
 
@@ -342,55 +327,4 @@ namespace LethalLevelLoader
         }
     }
 
-    public static class OriginalContent
-    {
-        public static StartOfRound StartOfRound => Patches.StartOfRound;
-        public static RoundManager RoundManager => Patches.RoundManager;
-        public static Terminal Terminal => Patches.Terminal;
-        public static TimeOfDay TimeOfDay => Patches.TimeOfDay;
-        
-        //Levels
-
-        public static List<SelectableLevel> SelectableLevels { get; internal set; } = new List<SelectableLevel>();
-
-        public static List<SelectableLevel> MoonsCatalogue { get; internal set; } = new List<SelectableLevel>();
-
-        //Dungeons
-
-        public static List<DungeonFlow> DungeonFlows { get; internal set; } = new List<DungeonFlow>();
-
-        //Items
-
-        public static List<Item> Items { get; internal set; } = new List<Item>();
-
-        public static List<ItemGroup> ItemGroups { get; internal set; } = new List<ItemGroup>();
-
-        //Enemies
-
-        public static List<EnemyType> Enemies { get; internal set; } = new List<EnemyType>();
-
-        //Spawnable Objects
-
-        public static List<SpawnableOutsideObject> SpawnableOutsideObjects { get; internal set; } = new List<SpawnableOutsideObject>();
-
-        public static List<GameObject> SpawnableMapObjects { get; internal set; } = new List<GameObject>();
-
-        //Audio
-
-        public static List<AudioMixer> AudioMixers { get; internal set; } = new List<AudioMixer>();
-
-        public static List<AudioMixerGroup> AudioMixerGroups { get; internal set; } = new List<AudioMixerGroup>();
-
-        public static List<AudioMixerSnapshot> AudioMixerSnapshots { get; internal set; } = new List<AudioMixerSnapshot>();
-
-        public static List<LevelAmbienceLibrary> LevelAmbienceLibraries { get; internal set; } = new List<LevelAmbienceLibrary>();
-
-        public static List<ReverbPreset> ReverbPresets { get; internal set; } = new List<ReverbPreset>();
-
-        //Terminal
-
-        public static List<TerminalKeyword> TerminalKeywords { get; internal set; } = new List<TerminalKeyword>();
-
-        public static List<TerminalNode> TerminalNodes { get; internal set; } = new List<TerminalNode>();
-    }
 }
